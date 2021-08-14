@@ -45,7 +45,6 @@ import { IframePhoneRpcEndpoint } from 'iframe-phone';
 
 /**
  * The CODAP Connection
- * @param {iframePhone.IframePhoneRpcEndpoint}
  */
 var connection: { call: (arg0: any, arg1: (response: any) => void) => void; } | null = null;
 
@@ -250,7 +249,6 @@ const codapInterface = {
 
   /**
    * Current known state of the connection
-   * @param {'preinit' || 'init' || 'active' || 'inactive' || 'closed'}
    */
   getConnectionState: function () {return connectionState;},
 
@@ -351,7 +349,7 @@ const codapInterface = {
    *   'move', 'resize', .... If not specified, all operations will be reported.
    * @param handler {Function} A handler to receive the notifications.
    */
-  on: function (actionSpec: string, resourceSpec: string, operation: string | (() => void), handler?: () => void) {
+  on: function (actionSpec: string, resourceSpec: string, operation: string | (() => void), handler?: (...args:any) => void) {
     var as = 'notify',
         rs,
         os,
