@@ -29,7 +29,7 @@ import {ValueResult} from "./tutorial-types";
 const kPluginName = "WeatherX Tutorial";
 const kVersion = "0.9";
 const kInitialDimensions = {
-	width: 440,
+	width: 450,
 	height: 495
 }
 

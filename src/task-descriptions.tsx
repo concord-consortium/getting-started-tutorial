@@ -195,7 +195,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 
 const allAccomplishedFeedback = (
 	<div>
-		<p>Congratulations! You've completed all ${taskDescriptions.descriptions.length} tasks.</p>
+		<p>Congratulations! You've completed all {taskDescriptions.descriptions.length} tasks.</p>
 		<p>You can do a <em>lot</em> in CODAP with just the skills you've practiced!</p>
 		<p>Before you quit, spend some more time with this weather data and see what else you
 				can discover.</p>
