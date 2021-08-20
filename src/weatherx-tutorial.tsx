@@ -18,7 +18,7 @@
 // ==========================================================================
 
 import React, {Component} from 'react';
-import {initializePlugin, createDataContext} from './lib/codap-helper';
+import {initializePlugin} from './lib/codap-helper';
 import './weatherx-tutorial.css';
 import {WelcomeArea} from "./welcome-area";
 import {TaskList} from "./task-list";
@@ -27,12 +27,11 @@ import codapInterface from "./lib/CodapInterface";
 import {ValueResult} from "./tutorial-types";
 
 const kPluginName = "WeatherX Tutorial";
-const kVersion = "0.0.1";
+const kVersion = "0.9";
 const kInitialDimensions = {
-	width: 400,
-	height: 550
+	width: 440,
+	height: 495
 }
-const kDataContextName = "SamplePluginData";
 
 class WeaterxTutorial extends Component<{},
 	{
@@ -51,23 +50,24 @@ class WeaterxTutorial extends Component<{},
 			accomplished: []
 		}
 		this.handleHelpClick = this.handleHelpClick.bind(this);
-		this.handleInfoClick = this.handleInfoClick.bind(this);
 		this.handleCodapNotification = this.handleCodapNotification.bind(this);
 		this.handleOtherNotification = this.handleOtherNotification.bind(this);
 
 		codapInterface.on('notify', 'documentChangeNotice', '', this.handleCodapNotification);
+		codapInterface.on('notify', 'dataContextChangeNotice', '', this.handleCodapNotification);
 		codapInterface.on('notify', 'component', '', this.handleCodapNotification);
 		codapInterface.on('notify', '*', '', this.handleOtherNotification);
 	}
 
 	public componentDidMount() {
-		initializePlugin(kPluginName, kVersion, kInitialDimensions)
-			.then(() => createDataContext(kDataContextName));
+		initializePlugin(kPluginName, kVersion, kInitialDimensions);
 	}
 
 	private async handleCodapNotification(iNotification: any) {
-		let this_ = this;
+		let this_ = this,
+				tValues = iNotification.values;
 
+/*
 		async function handleAttributeChange() {
 			let tChangeResult: any = await codapInterface.sendRequest({
 				action: 'get',
@@ -112,9 +112,11 @@ class WeaterxTutorial extends Component<{},
 				}
 			}
 		}
+*/
 
+/*
 		function handleLegendAttributeChange() {
-			if (iNotification.values.type === 'DG.GraphModel' && (iNotification.values.attributeName === 'Sex'))
+			if (tValues.type === 'DG.GraphModel' && (tValues.attributeName === 'Sex'))
 				this_.handleAccomplishment('MakeLegend');
 		}
 
@@ -132,23 +134,43 @@ class WeaterxTutorial extends Component<{},
 			}
 			this_.handleAccomplishment('Drag');
 		}
+*/
 
-		switch (iNotification.values.operation) {
+		switch (tValues.operation) {
+/*
 			case 'dataContextCountChanged':
 				await handleDataContextCountChanged();
 				break;
+*/
 			case 'create':
-				if (iNotification.values.type === 'graph')
-					this.handleAccomplishment('MakeGraph', !this.isAccomplished('Drag'));
-				else if (iNotification.values.type === 'table')
+				if (tValues.type === 'graph')
+					this.handleAccomplishment('MakeGraph');
+				else if (tValues.type === 'table')
 					this.handleAccomplishment('MakeTable');
 				break;
 			case 'move':
-				if (iNotification.values.type === 'DG.GraphView' || iNotification.values.type === 'DG.TableView')
+				if (tValues.type === 'DG.GraphView' || tValues.type === 'DG.TableView')
 					this.handleAccomplishment('MoveComponent');
 				break;
+			case 'resize':
+				if (tValues.type === 'DG.GraphView' || tValues.type === 'DG.TableView')
+					this.handleAccomplishment('ResizeComponent');
+				break;
 			case 'attributeChange':
-				handleAttributeChange();
+				if( tValues.attributeName === 'when' && tValues.axisOrientation === 'horizontal')
+					this.handleAccomplishment('WhenXAxis');
+				else if( tValues.attributeName.startsWith('t') && tValues.axisOrientation === 'vertical' &&
+							!this.isAccomplished('TempYAxis'))
+					this.handleAccomplishment('TempYAxis');
+				else if(tValues.axisOrientation==='vertical' && this.isAccomplished('TempYAxis'))
+					this.handleAccomplishment('changeYAttribute');
+				break;
+			case 'selectCases':
+				if( tValues.result.cases)
+					this.handleAccomplishment('SelectCase');
+				break;
+			case 'change axis bounds':
+				this.handleAccomplishment('dragAxis');
 				break;
 			/*
 						case 'legendAttributeChange':
@@ -229,20 +251,23 @@ class WeaterxTutorial extends Component<{},
 		this.setState({accomplished: accomplished})
 	}
 
-	startOver() {
-		window.parent.location.reload();
-	}
-
-	private handleHelpClick() {
-
-	}
-
-	private handleInfoClick() {
-
+	private handleHelpClick(movieURL:string) {
+		let this_ = this;
+		this.setState({movieURL: '', whichFeedback: ''});
+		setTimeout(function () {
+			this_.setState({movieURL: movieURL, whichFeedback: 'movie'});
+		}, 10);
+		codapInterface.sendRequest({
+			action: 'notify',
+			resource: 'logMessage',
+			values: {
+				formatStr: "User clicked ShowMe for %@",
+				replaceArgs: [movieURL]
+			}
+		});
 	}
 
 	public render() {
-		console.log(`whichFeedback = ${this.state.whichFeedback} and feedbackText = ${this.state.feedbackText}`);
 		let tHelp = this.state.whichFeedback === '' ? '' :
 			<WelcomeArea
 				movieURL={this.state.movieURL}
@@ -266,10 +291,6 @@ class WeaterxTutorial extends Component<{},
 				<div className="WeatherxTutorial-taskarea">
 					{taskList}
 				</div>
-				<img src="./resources/infoIcon.png"
-						 className="WeatherxTutorial-info"
-						 alt={'Get information about this tutorial'}
-						 onClick={this.handleInfoClick}/>
 			</div>
 		);
 	}

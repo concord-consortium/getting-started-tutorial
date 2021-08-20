@@ -16,8 +16,8 @@ export function WelcomeArea(props:WelcomeProps) {
 		case 'welcome':
 			tResult = (
 				<div className="WeatherxTutorial-header-welcome">
-					<img src={'./resources/codap_logo.png'} className="WeatherX-logo" alt="logo"/>
 					<h2>WeatherX CODAP Tutorial</h2>
+					<p>Learn how to make and manipulate graphs in CODAP.</p>
 				</div>
 			);
 			break;

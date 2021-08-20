@@ -97,7 +97,7 @@ var interactiveState = {};
 var notificationSubscribers: { actionSpec: string; resourceSpec: any; operation: any; handler: any; }[] = [];
 
 function matchResource(resourceName: any, resourceSpec: string) {
-  return resourceSpec === '*' || resourceName === resourceSpec;
+  return resourceSpec === '*' || resourceName.startsWith(resourceSpec);
 }
 
 function notificationHandler (request: { action: any; resource: any; values: any; }, callback: (arg0: { success: boolean; }) => void) {

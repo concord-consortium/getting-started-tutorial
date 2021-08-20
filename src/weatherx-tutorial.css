@@ -13,9 +13,9 @@
 
 .WeatherxTutorial-header-movie {
   background-color: #222;
-  height: 150px;
-  padding-bottom: 20px;
-  padding-top: 20px;
+  height: 170px;
+  width: 440px;
+  object-fit: cover;
 }
 
 .WeatherxTutorial-header-welcome {
@@ -61,13 +61,17 @@
 
 .WeatherxTutorial-movie {
   height: 170px;
+  width: 440px;
+  object-fit: cover;
 }
 
 .WeatherxTutorial-intro {
-  font-size: large;
+  font-size: 15px;
+  padding-left: 5px;
 }
 
 .WeatherxTutorial-taskarea {
+  font-size: 11pt;
   overflow: auto;
 }
 
