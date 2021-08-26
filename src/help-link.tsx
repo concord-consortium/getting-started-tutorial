@@ -10,7 +10,7 @@ export function HelpLink(props:{ helpURL:string, handleHelpClick:any}) {
 						props.handleHelpClick(props.helpURL);
 					}}
 		>
-			Show me
+			Show me more
 		</span>
 	);
 }

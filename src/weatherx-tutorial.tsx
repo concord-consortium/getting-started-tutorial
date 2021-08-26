@@ -27,7 +27,7 @@ import codapInterface from "./lib/CodapInterface";
 import {ValueResult} from "./tutorial-types";
 
 const kPluginName = "WeatherX Tutorial";
-const kVersion = "0.9";
+const kVersion = "0.91";
 const kInitialDimensions = {
 	width: 450,
 	height: 495
@@ -65,83 +65,83 @@ class WeaterxTutorial extends Component<{},
 
 	private async handleCodapNotification(iNotification: any) {
 		let this_ = this,
-				tValues = iNotification.values;
+			tValues = iNotification.values;
 
-/*
-		async function handleAttributeChange() {
-			let tChangeResult: any = await codapInterface.sendRequest({
-				action: 'get',
-				resource: 'componentList'
-			});
-			if (tChangeResult.success && tChangeResult.values.length > 1) {
-				let tGraphRequestList: { action: string, resource: string }[] = [];
-				tChangeResult.values.forEach(function (iComponent: { type: string, id: number }) {
-					if (iComponent.type === 'graph') {
-						tGraphRequestList.push({
-							action: 'get',
-							resource: 'component[' + iComponent.id + ']'
-						})
-					}
-				});
-				if (tGraphRequestList.length > 0) {
-					let tGraphResult: any = await codapInterface.sendRequest(tGraphRequestList);
-					let maxAttrsFound = 0;
-					tGraphResult.forEach(function (iResult: ValueResult) {
-						let numAttrsFound = 0;
-						['xAttributeName', 'yAttributeName', 'y2AttributeName', 'legendAttributeName'].forEach(
-							(iKey) => {
-								if (iResult.values[iKey])
-									numAttrsFound++;
-							}
-						);
-						maxAttrsFound = Math.max(maxAttrsFound, numAttrsFound);
+		/*
+				async function handleAttributeChange() {
+					let tChangeResult: any = await codapInterface.sendRequest({
+						action: 'get',
+						resource: 'componentList'
 					});
-					switch (maxAttrsFound) {
-						case 1:
-							if (taskDescriptions.taskExists('AssignAttribute'))
-								this_.handleAccomplishment('AssignAttribute');
-							break;
-						case 2:
-							if (taskDescriptions.taskExists('MakeScatterplot'))
-								this_.handleAccomplishment('MakeScatterplot');
-						// fallthrough deliberate
-						case 3:
-							this_.handleAccomplishment('SecondAttribute');
-							break;
+					if (tChangeResult.success && tChangeResult.values.length > 1) {
+						let tGraphRequestList: { action: string, resource: string }[] = [];
+						tChangeResult.values.forEach(function (iComponent: { type: string, id: number }) {
+							if (iComponent.type === 'graph') {
+								tGraphRequestList.push({
+									action: 'get',
+									resource: 'component[' + iComponent.id + ']'
+								})
+							}
+						});
+						if (tGraphRequestList.length > 0) {
+							let tGraphResult: any = await codapInterface.sendRequest(tGraphRequestList);
+							let maxAttrsFound = 0;
+							tGraphResult.forEach(function (iResult: ValueResult) {
+								let numAttrsFound = 0;
+								['xAttributeName', 'yAttributeName', 'y2AttributeName', 'legendAttributeName'].forEach(
+									(iKey) => {
+										if (iResult.values[iKey])
+											numAttrsFound++;
+									}
+								);
+								maxAttrsFound = Math.max(maxAttrsFound, numAttrsFound);
+							});
+							switch (maxAttrsFound) {
+								case 1:
+									if (taskDescriptions.taskExists('AssignAttribute'))
+										this_.handleAccomplishment('AssignAttribute');
+									break;
+								case 2:
+									if (taskDescriptions.taskExists('MakeScatterplot'))
+										this_.handleAccomplishment('MakeScatterplot');
+								// fallthrough deliberate
+								case 3:
+									this_.handleAccomplishment('SecondAttribute');
+									break;
+							}
+						}
 					}
 				}
-			}
-		}
-*/
+		*/
 
-/*
-		function handleLegendAttributeChange() {
-			if (tValues.type === 'DG.GraphModel' && (tValues.attributeName === 'Sex'))
-				this_.handleAccomplishment('MakeLegend');
-		}
+		/*
+				function handleLegendAttributeChange() {
+					if (tValues.type === 'DG.GraphModel' && (tValues.attributeName === 'Sex'))
+						this_.handleAccomplishment('MakeLegend');
+				}
 
-		async function handleDataContextCountChanged() {
-			let tListResult: any = await codapInterface.sendRequest({
-				action: 'get',
-				resource: 'dataContextList'
-			});
-			if (tListResult.success && tListResult.values.length > 1) {
-				let tName = tListResult.values[0].name;
-				await codapInterface.sendRequest({
-					action: 'delete',
-					resource: 'dataContext[' + tName + ']'
-				});
-			}
-			this_.handleAccomplishment('Drag');
-		}
-*/
+				async function handleDataContextCountChanged() {
+					let tListResult: any = await codapInterface.sendRequest({
+						action: 'get',
+						resource: 'dataContextList'
+					});
+					if (tListResult.success && tListResult.values.length > 1) {
+						let tName = tListResult.values[0].name;
+						await codapInterface.sendRequest({
+							action: 'delete',
+							resource: 'dataContext[' + tName + ']'
+						});
+					}
+					this_.handleAccomplishment('Drag');
+				}
+		*/
 
 		switch (tValues.operation) {
-/*
-			case 'dataContextCountChanged':
-				await handleDataContextCountChanged();
-				break;
-*/
+			/*
+						case 'dataContextCountChanged':
+							await handleDataContextCountChanged();
+							break;
+			*/
 			case 'create':
 				if (tValues.type === 'graph')
 					this.handleAccomplishment('MakeGraph');
@@ -157,16 +157,16 @@ class WeaterxTutorial extends Component<{},
 					this.handleAccomplishment('ResizeComponent');
 				break;
 			case 'attributeChange':
-				if( tValues.attributeName === 'when' && tValues.axisOrientation === 'horizontal')
+				if (tValues.attributeName === 'when' && tValues.axisOrientation === 'horizontal')
 					this.handleAccomplishment('WhenXAxis');
-				else if( tValues.attributeName.startsWith('t') && tValues.axisOrientation === 'vertical' &&
-							!this.isAccomplished('TempYAxis'))
+				else if (tValues.attributeName.startsWith('t') && tValues.axisOrientation === 'vertical' &&
+					!this.isAccomplished('TempYAxis'))
 					this.handleAccomplishment('TempYAxis');
-				else if(tValues.axisOrientation==='vertical' && this.isAccomplished('TempYAxis'))
+				else if (tValues.axisOrientation === 'vertical' && this.isAccomplished('TempYAxis'))
 					this.handleAccomplishment('changeYAttribute');
 				break;
 			case 'selectCases':
-				if( tValues.result.cases)
+				if (tValues.result.cases)
 					this.handleAccomplishment('SelectCase');
 				break;
 			case 'change axis bounds':
@@ -251,7 +251,7 @@ class WeaterxTutorial extends Component<{},
 		this.setState({accomplished: accomplished})
 	}
 
-	private handleHelpClick(movieURL:string) {
+	private handleHelpClick(movieURL: string) {
 		let this_ = this;
 		this.setState({movieURL: '', whichFeedback: ''});
 		setTimeout(function () {
@@ -285,11 +285,13 @@ class WeaterxTutorial extends Component<{},
 		return (
 			<div className="WeatherxTutorial">
 				{tHelp}
-				<p className="WeatherxTutorial-intro">
-					Figure out how to accomplish each of these basic CODAP tasks:
-				</p>
-				<div className="WeatherxTutorial-taskarea">
-					{taskList}
+				<div className="WeatherxTutorial-intro">
+					<p>Figure out how to accomplish each of these basic CODAP tasks:</p>
+					<p>Click the <em>Show me more</em> links for video hints. Tasks will be marked as
+						complete once you've done them.</p>
+					<div className="WeatherxTutorial-taskarea">
+						{taskList}
+					</div>
 				</div>
 			</div>
 		);
