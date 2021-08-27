@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import WeaterxTutorial from './weatherx-tutorial';
+import GettingStartedTutorial from './getting-started-tutorial';
 
 it('renders without crashing', () => {
   const div = document.createElement('div');
-  ReactDOM.render(<WeaterxTutorial />, div);
+  ReactDOM.render(<GettingStartedTutorial />, div);
   ReactDOM.unmountComponentAtNode(div);
 });

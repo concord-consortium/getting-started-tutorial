@@ -3,7 +3,7 @@
  **/
 import React from "react";
 import {HelpLink} from "./help-link";
-import {TaskDescription} from "./task-descriptions";
+import {TaskDescription} from "./wx-constants";
 
 export interface TaskListProps {
 	descriptions: TaskDescription[],
@@ -16,7 +16,7 @@ export function TaskList(props: TaskListProps) {
 		let tChecked = props.accomplished.indexOf(iAction.key) >= 0;
 		return (
 			<div key={iAction.key}>
-				<input className="WeatherxTutorial-checkbox"
+				<input className="GettingStartedTutorial-checkbox"
 							 type="checkbox"
 							 onClick={function () {
 								 return false;
@@ -31,7 +31,7 @@ export function TaskList(props: TaskListProps) {
 		);
 	});
 	return (
-		<div className="WeatherxTutorial-list">
+		<div className="GettingStartedTutorial-list">
 			{checkBoxes}
 		</div>
 	);

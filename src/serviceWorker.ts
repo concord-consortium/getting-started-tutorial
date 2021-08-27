@@ -129,7 +129,7 @@ function checkValidServiceWorker(swUrl: string, config?: Config) {
     })
     .catch(() => {
       console.log(
-        'No internet connection found. WeaterxTutorial is running in offline mode.'
+        'No internet connection found. GettingStartedTutorial is running in offline mode.'
       );
     });
 }

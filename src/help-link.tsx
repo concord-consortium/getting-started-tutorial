@@ -2,15 +2,16 @@
  * A simple component for displaying a clickable link to help
  **/
 import React from "react";
+import {parameters} from "./wx-constants";
 
 export function HelpLink(props:{ helpURL:string, handleHelpClick:any}) {
 	return (
-		<span className="WeatherxTutorial-help"
+		<span className="GettingStartedTutorial-help"
 					onClick={()=>{
 						props.handleHelpClick(props.helpURL);
 					}}
 		>
-			Show me more
+			{parameters.showMePrompt}
 		</span>
 	);
 }

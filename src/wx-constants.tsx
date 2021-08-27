@@ -3,17 +3,33 @@
  **/
 import React, {ReactElement} from "react";
 
+export const parameters = {
+	short_name: 'WeatherX',
+	name: 'WeatherX Tutorial',
+	title: 'WeatherX CODAP Tutorial',
+	welcomeText: <p>Learn how to make and manipulate graphs in CODAP.</p>,
+	packageName: 'weatherx-tutorial',
+	version: '0.92',
+	initialDimensions: {
+		width: 450,
+		height: 495
+	},
+	showMePrompt: 'Show me more'
+}
+
 export interface TaskDescription {
 	key: string,
 	label: string,
 	url: string,
 	feedback: ReactElement,
 	alt_feedback?: ReactElement,
-	operation?: string,
-	type?: string[],
-	requiresSpecialHandling?: boolean,
-	prereq?: string,
-	constraints?: any[]
+	operation: string,
+	componentTypeArray?: string[],
+	attributeNameArray?:string[],
+	axisOrientation?:string,
+	// requiresSpecialHandling?: boolean,
+	prereq?: string
+	// constraints?: any[]
 }
 
 export interface TaskDescriptionsObject {
@@ -27,7 +43,9 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'MakeGraph',
 			label: 'Make a graph',
-			url: './resources/wx_MakeGraph.mp4',
+			url: './resources/wx/wx_MakeGraph.mp4',
+			operation: 'create',
+			componentTypeArray: ['graph'],
 			feedback: (
 				<div>
 					<p>Very nice graph! Each point represents one of the cases in your data set.</p>
@@ -39,7 +57,10 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'WhenXAxis',
 			label: 'Drag the attribute "when" to a graph\'s x-axis',
-			url: './resources/wx_WhenXAxis.mp4',
+			url: './resources/wx/wx_WhenXAxis.mp4',
+			operation: 'attributeChange',
+			attributeNameArray: ['when'],
+			axisOrientation: 'horizontal',
 			feedback: (
 				<div>
 					<p>Way to go! You dragged the <strong>when</strong> attribute to the graph's x-axis.</p>
@@ -50,7 +71,10 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'TempYAxis',
 			label: 'Drag a temperature attribute to the graph\'s y-axis',
-			url: './resources/wx_TempYAxis.mp4',
+			url: './resources/wx/wx_TempYAxis.mp4',
+			operation: 'attributeChange',
+			attributeNameArray: ['tMax', 'tMin', 'tAvg'],
+			axisOrientation: 'vertical',
 			feedback: (
 				<div>
 					<p>Alright! You dragged a temperature attribute to the graph's y-axis.</p>
@@ -61,7 +85,8 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'SelectCase',
 			label: 'Click on a point in the graph or a row in the table',
-			url: './resources/wx_SelectCase.mp4',
+			url: './resources/wx/wx_SelectCase.mp4',
+			operation: 'selectCases',
 			feedback: (
 				<div>
 					<p>You've selected a case.</p>
@@ -75,7 +100,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'ConnectingLines',
 			label: 'Connect the points on your scatterplot with lines',
-			url: './resources/wx_ConnectingLines.mp4',
+			url: './resources/wx/wx_ConnectingLines.mp4',
 			operation: 'toggle connecting line',
 			feedback: (
 				<div>
@@ -89,7 +114,11 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'changeYAttribute',
 			label: 'Drag a new attribute to the graph\'s y-axis',
-			url: './resources/wx_changeYAttribute.mp4',
+			url: './resources/wx/wx_changeYAttribute.mp4',
+			operation: 'attributeChange',
+			prereq: 'TempYAxis',
+			attributeNameArray: ['tMax', 'tMin', 'tAvg', 'avgWind'],
+			axisOrientation: 'vertical',
 			feedback: (
 				<div>
 					<p>Way to go! You can change what is plotted just by dragging attributes to axes, even
@@ -101,8 +130,9 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'add2ndAttribute',
 			label: 'Drag a second attribute to the graph\'s y-axis',
+			url: './resources/wx/wx_add2ndAttribute.mp4',
 			operation: 'add axis attribute',
-			url: './resources/wx_add2ndAttribute.mp4',
+			prereq: 'TempYAxis',
 			feedback: (
 				<div>
 					<p>Good one! Now you can easily compare how the values for the two attributes change over time.</p>
@@ -113,7 +143,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		{
 			key: 'changeTitle',
 			label: 'Change the title of your graph or table',
-			url: './resources/wx_changeTitle.mp4',
+			url: './resources/wx/wx_changeTitle.mp4',
 			operation: 'titleChange',
 			feedback: (
 				<div>
@@ -128,7 +158,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 			label: 'Move a table or graph',
 			url: '',
 			operation: 'move',
-			type: ['DG.GraphView', 'DG.TableView'],
+			componentTypeArray: ['DG.GraphView', 'DG.TableView'],
 			feedback: (
 				<div>
 					<p>You <em>moved</em> that component by clicking and dragging on its title bar!</p>
@@ -141,7 +171,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 			label: 'Resize a table or graph',
 			url: '',
 			operation: 'resize',
-			type: ['DG.GraphView', 'DG.TableView'],
+			componentTypeArray: ['DG.GraphView', 'DG.TableView'],
 			feedback: (
 				<div>
 					<p>You <em>resized</em> that component by clicking and dragging on an edge or corner!</p>
@@ -176,15 +206,11 @@ export const taskDescriptions: TaskDescriptionsObject = {
 			)
 		}*/
 	],
-	getFeedbackFor: (iKey: string, iUseAltFeedback?: boolean, iAllAccomplished?: boolean): any => {
+	getFeedbackFor: (iKey: string, iUseAltFeedback?: boolean): any => {
 		let tDesc = taskDescriptions.descriptions.find(function (iDesc) {
 			return iKey === iDesc.key;
 		});
-		let tFeedback = tDesc ? (iUseAltFeedback ? tDesc.alt_feedback : tDesc.feedback) : '';
-		if (iAllAccomplished) {
-			tFeedback = allAccomplishedFeedback;
-		}
-		return tFeedback;
+		return tDesc ? (iUseAltFeedback ? tDesc.alt_feedback : tDesc.feedback) : '';
 	},
 	taskExists: (iKey: string): boolean => {
 		return taskDescriptions.descriptions.some(function (iDesc) {
@@ -193,7 +219,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 	}
 }
 
-const allAccomplishedFeedback = (
+export const allAccomplishedFeedback = (
 	<div>
 		<p>Congratulations! You've completed all {taskDescriptions.descriptions.length} tasks.</p>
 		<p>You can do a <em>lot</em> in CODAP with just the skills you've practiced!</p>

@@ -1,7 +1,5 @@
-/**
- * An empty moment is a placeholder for when user deletes all normal moments. Clicking creates a new normal moment.
- **/
 import React from "react";
+import {parameters} from "./wx-constants";
 
 export interface WelcomeProps {
 	movieURL: string,
@@ -15,16 +13,16 @@ export function WelcomeArea(props:WelcomeProps) {
 	switch (props.whichFeedback) {
 		case 'welcome':
 			tResult = (
-				<div className="WeatherxTutorial-header-welcome">
-					<h2>WeatherX CODAP Tutorial</h2>
-					<p>Learn how to make and manipulate graphs in CODAP.</p>
+				<div className="GettingStartedTutorial-header-welcome">
+					<h2>{parameters.title}</h2>
+					{parameters.welcomeText}
 				</div>
 			);
 			break;
 		case 'movie':
 			tResult = (
-				<div className="WeatherxTutorial-header-movie">
-					<video id="movieVideo" className="WeatherxTutorial-movie" autoPlay onEnded={props.handleEnded}>
+				<div className="GettingStartedTutorial-header-movie">
+					<video id="movieVideo" className="GettingStartedTutorial-movie" autoPlay onEnded={props.handleEnded}>
 						<source src={props.movieURL} type="video/mp4"/>
 					</video>
 				</div>
@@ -32,14 +30,14 @@ export function WelcomeArea(props:WelcomeProps) {
 			break;
 		case 'feedback':
 			tResult = (
-				<div className="WeatherxTutorial-header-feedback">
+				<div className="GettingStartedTutorial-header-feedback">
 					{props.feedbackText}
 				</div>
 			);
 			break;
 		default:
 			tResult = (
-				<div className="WeatherxTutorial-header-empty"/>
+				<div className="GettingStartedTutorial-header-empty"/>
 			);
 	}
 	return tResult;

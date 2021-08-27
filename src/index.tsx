@@ -1,10 +1,10 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import './index.css';
-import WeaterxTutorial from './weatherx-tutorial';
+import GettingStartedTutorial from './getting-started-tutorial';
 import * as serviceWorker from './serviceWorker';
 
-ReactDOM.render(<WeaterxTutorial />, document.getElementById('root'));
+ReactDOM.render(<GettingStartedTutorial />, document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change
 // unregister() to register() below. Note this comes with some pitfalls.
