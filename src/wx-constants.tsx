@@ -2,6 +2,7 @@
  * This list of tasks contains descriptions of tasks the user is asked to complete
  **/
 import React, {ReactElement} from "react";
+import {TaskDescriptionsObject} from "./task-types";
 
 export const parameters = {
 	short_name: 'WeatherX',
@@ -9,33 +10,15 @@ export const parameters = {
 	title: 'WeatherX CODAP Tutorial',
 	welcomeText: <p>Learn how to make and manipulate graphs in CODAP.</p>,
 	packageName: 'weatherx-tutorial',
-	version: '0.92',
+	version: '1.0',
 	initialDimensions: {
 		width: 450,
 		height: 495
 	},
-	showMePrompt: 'Show me more'
-}
-
-export interface TaskDescription {
-	key: string,
-	label: string,
-	url: string,
-	feedback: ReactElement,
-	alt_feedback?: ReactElement,
-	operation: string,
-	componentTypeArray?: string[],
-	attributeNameArray?:string[],
-	axisOrientation?:string,
-	// requiresSpecialHandling?: boolean,
-	prereq?: string
-	// constraints?: any[]
-}
-
-export interface TaskDescriptionsObject {
-	descriptions: TaskDescription[],
-	getFeedbackFor: (iKey: string, iUseAltFeedback: boolean, iAllAccomplished: boolean) => string,
-	taskExists: (iKey: string) => boolean
+	showMePrompt: 'Show me more',
+	intro1: <p>Figure out how to accomplish each of these basic CODAP tasks:</p>,
+	intro2: <p>Click the <em>Show me more</em> links for video hints.
+		Tasks will be marked as complete once you've done them.</p>
 }
 
 export const taskDescriptions: TaskDescriptionsObject = {
@@ -90,8 +73,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 			feedback: (
 				<div>
 					<p>You've selected a case.</p>
-					<p>When you click on a point it highlights in all graphs displaying that case and the corresponding
-						row in the table is selected as well.</p>
+					<p>Clicking on a point in a graph selects the case and also selects the corresponding row in the table.</p>
 					<p>Clicking on a row in a table also selects that case and highlights the corresponding point in
 						the graph.</p>
 				</div>
@@ -129,7 +111,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 		},
 		{
 			key: 'add2ndAttribute',
-			label: 'Drag a second attribute to the graph\'s y-axis',
+			label: 'Add a second attribute to the graph\'s y-axis to display two attributes over time',
 			url: './resources/wx/wx_add2ndAttribute.mp4',
 			operation: 'add axis attribute',
 			prereq: 'TempYAxis',

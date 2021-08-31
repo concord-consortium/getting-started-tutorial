@@ -22,6 +22,7 @@ import {initializePlugin} from './lib/codap-helper';
 import './getting-started-tutorial.css';
 import {WelcomeArea} from "./welcome-area";
 import {TaskList} from "./task-list";
+import {TaskDescription} from "./task-types";
 import {taskDescriptions, allAccomplishedFeedback, parameters} from "./wx-constants";
 import codapInterface from "./lib/CodapInterface";
 
@@ -52,33 +53,51 @@ class GettingStartedTutorial extends Component<{},
 		initializePlugin(parameters.name, parameters.version, parameters.initialDimensions);
 	}
 
-	private checkForTaskCompletion( iNotification: any) {
+	private async checkForTaskCompletion( iNotification: any) {
 		let this_ = this,
 			tHandledOne = false,
 			tValues = iNotification.values,
 			tCandidates = taskDescriptions.descriptions.filter(iDesc=>{
 			return iDesc.operation === tValues.operation;
 		});
-		tCandidates.forEach(iCandidate=>{
+		await tCandidates.forEach(async iCandidate=>{
 			if( !this_.isAccomplished(iCandidate.key) &&
 				(!iCandidate.componentTypeArray || iCandidate.componentTypeArray.includes(tValues.type)) &&
 				(!iCandidate.attributeNameArray || iCandidate.attributeNameArray.includes(tValues.attributeName)) &&
 				(!iCandidate.axisOrientation || iCandidate.axisOrientation === tValues.axisOrientation) &&
-				(!iCandidate.prereq || this_.isAccomplished(iCandidate.prereq))
+				(!iCandidate.prereq || this_.isAccomplished(iCandidate.prereq)) &&
+				(!iCandidate.renameType || await this_.resourceIsOfType(iNotification.resource, iCandidate.renameType)) &&
+				(!iCandidate.collectionName || (tValues.result.cases && tValues.result.cases.length > 0 &&
+					tValues.result.cases[0].collection.name === iCandidate.collectionName)) &&
+				(!iCandidate.noneSelected || !tValues.result.cases) &&
+				(!iCandidate.moreThanOneSelected || (tValues.result.cases && tValues.result.cases.length > 1))
 			) {
 				this_.handleAccomplishment( iCandidate.key);
+				this_.acceptProvisionals();
 				tHandledOne = true;
 			}
 		});
-		if( tHandledOne)
-			this.acceptProvisionals();
-		else if( this.allAccomplished()) {
+		if( !tHandledOne && this.allAccomplished()) {
 			this.setState({
 				whichFeedback: 'feedback',
 				feedbackText: allAccomplishedFeedback
 			})
 		}
 
+	}
+
+	private async resourceIsOfType(iResource:string, iType:string):Promise<boolean> {
+		let tResult = false,
+			tMatch = iResource.match(/\d+/),
+			tID = tMatch && Number(tMatch[0]);
+		if( tID) {
+			let tGetResult:any = await codapInterface.sendRequest( {
+				action: 'get',
+				resource: `component[${tID}]`
+			});
+			tResult = tGetResult.success && tGetResult.values.type === iType;
+		}
+		return tResult;
 	}
 
 	allAccomplished() {
@@ -172,9 +191,8 @@ class GettingStartedTutorial extends Component<{},
 			<div className="GettingStartedTutorial">
 				{tHelp}
 				<div className="GettingStartedTutorial-intro">
-					<p>Figure out how to accomplish each of these basic CODAP tasks:</p>
-					<p>Click the <em>Show me more</em> links for video hints. Tasks will be marked as
-						complete once you've done them.</p>
+					{parameters.intro1}
+					{parameters.intro2}
 					<div className="GettingStartedTutorial-taskarea">
 						{taskList}
 					</div>

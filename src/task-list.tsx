@@ -3,7 +3,7 @@
  **/
 import React from "react";
 import {HelpLink} from "./help-link";
-import {TaskDescription} from "./wx-constants";
+import {TaskDescription} from "./task-types";
 
 export interface TaskListProps {
 	descriptions: TaskDescription[],
