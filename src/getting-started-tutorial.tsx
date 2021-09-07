@@ -23,7 +23,7 @@ import './getting-started-tutorial.css';
 import {WelcomeArea} from "./welcome-area";
 import {TaskList} from "./task-list";
 import {TaskDescription} from "./task-types";
-import {taskDescriptions, allAccomplishedFeedback, parameters} from "./wx-constants";
+import {taskDescriptions, allAccomplishedFeedback, parameters} from "./vs-constants";
 import codapInterface from "./lib/CodapInterface";
 
 class GettingStartedTutorial extends Component<{},
@@ -34,6 +34,7 @@ class GettingStartedTutorial extends Component<{},
 		provisionallyAccomplished: string[],
 		accomplished: string[]
 	}> {
+	[key:string]:any
 
 	constructor(props: any) {
 		super(props);
@@ -53,36 +54,132 @@ class GettingStartedTutorial extends Component<{},
 		initializePlugin(parameters.name, parameters.version, parameters.initialDimensions);
 	}
 
+	/**
+	 * This method is used by the GMRI tutorial (vs).
+	 * @private
+	 */
+	private async twoGraphsWithSimilarScales():Promise<boolean> {
+		let tResult = false,
+			tGraphList:any[],
+			tListResponse:any = await codapInterface.sendRequest({
+			action: 'get',
+			resource:'componentList'
+		});
+		tGraphList = tListResponse.values.filter((iResponse: { type:string })=>{
+			return iResponse.type === 'graph';
+		});
+		if( tGraphList.length > 1) {
+			// We need to gather up an array of {lower,upper} bounds and then check to see if any two
+			// are close enough to "pass" muster.
+			tResult = true;
+		}
+		return tResult;
+	}
+
 	private async checkForTaskCompletion( iNotification: any) {
+
+		function makeKeyedTest(iTest:any, key:string): {test:any, key:string} {
+			return {test: iTest, key: key };
+		}
+
 		let this_ = this,
-			tHandledOne = false,
 			tValues = iNotification.values,
 			tCandidates = taskDescriptions.descriptions.filter(iDesc=>{
 			return iDesc.operation === tValues.operation;
 		});
-		await tCandidates.forEach(async iCandidate=>{
+
+		let tests = [
+			makeKeyedTest((iCandidate:{key:string})=>this_.isAccomplished(iCandidate.key), 'isAccomplished'),
+			makeKeyedTest((iCandidate: { componentTypeArray: string[] }) => {
+				return !iCandidate.componentTypeArray ||
+					iCandidate.componentTypeArray.includes(tValues.type)
+			}, 'componentTypeArray'),
+			makeKeyedTest((iCandidate:{attributeNameArray:string[]})=>!iCandidate.attributeNameArray ||
+				iCandidate.attributeNameArray.includes(tValues.attributeName), 'attributeNameArray'),
+			makeKeyedTest((iCandidate:{axisOrientation:string})=>!iCandidate.axisOrientation ||
+				iCandidate.axisOrientation=== tValues.axisOrientation, 'axisOrientation'),
+			makeKeyedTest((iCandidate:{prereq:string})=>!iCandidate.prereq ||
+				this_.isAccomplished(iCandidate.prereq), 'prereq'),
+			makeKeyedTest(async (iCandidate:{renameType:string})=>!iCandidate.renameType ||
+				await this_.resourceIsOfType(iNotification.resource, iCandidate.renameType), 'renameType'),
+			makeKeyedTest((iCandidate:{collectionName:string, operation:string})=>
+				!(iCandidate.collectionName && iCandidate.operation === 'selectCases') ||
+				(tValues.result.cases && tValues.result.cases.length > 0 &&
+					tValues.result.cases[0].collection.name === iCandidate.collectionName), 'collectionName+selectCases'),
+			makeKeyedTest((iCandidate:{noneSelected:boolean})=>!iCandidate.noneSelected || !tValues.result.cases,
+				'noneSelected'),
+			makeKeyedTest((iCandidate:{moreThanOneSelected:boolean})=>!iCandidate.moreThanOneSelected ||
+				(tValues.result.cases && tValues.result.cases.length > 1), 'moreThanOneSelected'),
+			makeKeyedTest(async (iCandidate:{testMethodName:string})=>!iCandidate.testMethodName ||
+				await this_[iCandidate.testMethodName](), 'testMethodName'),
+			makeKeyedTest((iCandidate:{collectionName:string, operation:string})=>
+				!(iCandidate.collectionName && iCandidate.operation === 'createCollection') ||
+				(tValues.result.name === iCandidate.collectionName), 'collectionName+createCollection')
+		];
+		function defer(candidate:any, keyedTest:{test:any, key:string}) {
+			return(
+				new Promise((resolve, reject) => {
+					let testResult = keyedTest.test(candidate);
+					const msg = `candidateKey: ${candidate.key}, testKey: ${keyedTest.key}`;
+					if (!testResult)
+						resolve(`success ${msg}`)
+					else
+						reject(`reject ${msg}`)
+				}))
+		}
+
+		tCandidates.forEach(iCandidate=>{
+			let runnableTests = tests.map(iTest=>{
+				const tDeferred = defer(iCandidate, iTest);
+				return tDeferred;
+			})
+
+			Promise.all(runnableTests).then(results => {
+				if( results.length === tests.length) {
+					this_.handleAccomplishment(iCandidate.key);
+					this_.acceptProvisionals();
+				}
+				else if (this_.allAccomplished()) {
+					this.setState({
+						whichFeedback: 'feedback',
+						feedbackText: allAccomplishedFeedback
+					})
+				}
+			});
+
+/*
 			if( !this_.isAccomplished(iCandidate.key) &&
 				(!iCandidate.componentTypeArray || iCandidate.componentTypeArray.includes(tValues.type)) &&
 				(!iCandidate.attributeNameArray || iCandidate.attributeNameArray.includes(tValues.attributeName)) &&
 				(!iCandidate.axisOrientation || iCandidate.axisOrientation === tValues.axisOrientation) &&
 				(!iCandidate.prereq || this_.isAccomplished(iCandidate.prereq)) &&
 				(!iCandidate.renameType || await this_.resourceIsOfType(iNotification.resource, iCandidate.renameType)) &&
-				(!iCandidate.collectionName || (tValues.result.cases && tValues.result.cases.length > 0 &&
+				(!(iCandidate.collectionName && iCandidate.operation === 'selectCases') || (tValues.result.cases && tValues.result.cases.length > 0 &&
 					tValues.result.cases[0].collection.name === iCandidate.collectionName)) &&
 				(!iCandidate.noneSelected || !tValues.result.cases) &&
-				(!iCandidate.moreThanOneSelected || (tValues.result.cases && tValues.result.cases.length > 1))
+				(!iCandidate.moreThanOneSelected || (tValues.result.cases && tValues.result.cases.length > 1)) &&
+				(!iCandidate.testMethodName || await this_[iCandidate.testMethodName]()) &&
+				(!(iCandidate.collectionName && iCandidate.operation === 'createCollection') ||
+					(tValues.result.name === iCandidate.collectionName))
 			) {
+				console.log('accomplished ', iCandidate.key);
 				this_.handleAccomplishment( iCandidate.key);
-				this_.acceptProvisionals();
+				// this_.acceptProvisionals();
 				tHandledOne = true;
 			}
+*/
 		});
+/*
+		console.log('finished loop. tHandledOne = ', tHandledOne);
 		if( !tHandledOne && this.allAccomplished()) {
 			this.setState({
 				whichFeedback: 'feedback',
 				feedbackText: allAccomplishedFeedback
 			})
 		}
+		if( tHandledOne)
+			this_.acceptProvisionals();
+*/
 
 	}
 

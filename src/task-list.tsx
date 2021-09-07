@@ -13,7 +13,8 @@ export interface TaskListProps {
 
 export function TaskList(props: TaskListProps) {
 	let checkBoxes = props.descriptions.map((iAction) => {
-		let tChecked = props.accomplished.indexOf(iAction.key) >= 0;
+		let tChecked = props.accomplished.indexOf(iAction.key) >= 0,
+				tPrompt = typeof iAction.label === 'string' ? <span>{iAction.label}</span> : iAction.label;
 		return (
 			<div key={iAction.key}>
 				<input className="GettingStartedTutorial-checkbox"

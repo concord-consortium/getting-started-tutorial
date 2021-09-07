@@ -1,5 +1,5 @@
 import React from "react";
-import {parameters} from "./wx-constants";
+import {parameters} from "./vs-constants";
 
 export interface WelcomeProps {
 	movieURL: string,

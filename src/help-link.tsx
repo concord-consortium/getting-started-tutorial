@@ -2,7 +2,7 @@
  * A simple component for displaying a clickable link to help
  **/
 import React from "react";
-import {parameters} from "./wx-constants";
+import {parameters} from "./vs-constants";
 
 export function HelpLink(props:{ helpURL:string, handleHelpClick:any}) {
 	return (

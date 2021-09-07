@@ -5,7 +5,7 @@ import React, {ReactElement} from "react";
 
 export interface TaskDescription {
 	key: string,
-	label: string,
+	label: string | ReactElement,
 	url: string,
 	feedback: ReactElement,
 	alt_feedback?: ReactElement,
@@ -17,7 +17,8 @@ export interface TaskDescription {
 	collectionName?:string,	// For selecting from a specific collection
 	noneSelected?:boolean,
 	moreThanOneSelected?:boolean,
-	prereq?: string
+	prereq?: string,
+	testMethodName?:string
 }
 
 export interface TaskDescriptionsObject {
