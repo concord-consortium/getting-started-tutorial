@@ -1,8 +1,8 @@
 /**
  * This list of tasks contains descriptions of tasks the user is asked to complete
  **/
-import React, {ReactElement} from "react";
-import {TaskDescription, TaskDescriptionsObject} from "./task-types";
+import React from "react";
+import {TaskDescriptionsObject} from "./task-types";
 
 export const parameters = {
 	short_name: 'Vital Signs',
@@ -101,7 +101,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 			testMethodName: 'twoGraphsWithSimilarScales',
 			feedback: (
 				<div>
-					<p>Good work! That\'s a tricky move!</p>
+					<p>Good work! That's a tricky move!</p>
 					<p>With the two scales about the same, you can more easily compare the abundances of the
 						two kinds of crabs.</p>
 				</div>
@@ -113,7 +113,7 @@ export const taskDescriptions: TaskDescriptionsObject = {
 			url: './resources/vs_/vs_HideUnselected.mp4',
 			operation: 'hideUnselected',
 			prereq: 'selectFieldsite',
-			moreThanOneSelected: true,
+			somethingHidden: true,
 			feedback: (
 				<div>
 					<p>That's perfect! Now you can focus in on just the data from the one field site.</p>

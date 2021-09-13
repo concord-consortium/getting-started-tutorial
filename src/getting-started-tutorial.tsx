@@ -22,8 +22,7 @@ import {initializePlugin} from './lib/codap-helper';
 import './getting-started-tutorial.css';
 import {WelcomeArea} from "./welcome-area";
 import {TaskList} from "./task-list";
-import {TaskDescription} from "./task-types";
-import {taskDescriptions, allAccomplishedFeedback, parameters} from "./vs-constants";
+import {allAccomplishedFeedback, parameters, taskDescriptions} from "./wx-constants";
 import codapInterface from "./lib/CodapInterface";
 
 class GettingStartedTutorial extends Component<{},
@@ -58,22 +57,65 @@ class GettingStartedTutorial extends Component<{},
 	 * This method is used by the GMRI tutorial (vs).
 	 * @private
 	 */
-	private async twoGraphsWithSimilarScales():Promise<boolean> {
+	private twoGraphsWithSimilarScales() {
+
+		function getBounds(iGraph:any) {
+			if(iGraph.values.xLowerBound != null)
+				return {lower: iGraph.values.xLowerBound, upper: iGraph.values.xUpperBound};
+			else if(iGraph.values.yLowerBound != null)
+				return {lower: iGraph.values.yLowerBound, upper: iGraph.values.yUpperBound};
+			else
+				return null;
+		}
+
+		function within10Percent(b1:any, b2:any) {
+
+			function inRange(n1:number, n2:number, gap:number) {
+				return n1 > n2 - gap && n1 < n2 + gap;
+			}
+
+			if( b1===null || b2 === null)
+				return false;
+
+			let r1 = b1.upper - b1.lower,
+				r2 = b2.upper - b2.lower,
+				margin = r1>r2 ? 0.1 * r1 : 0.1 * r2,
+				result = inRange( b1.lower, b2.lower, margin) && inRange( b1.upper, b2.upper, margin);
+			console.log(b1, b2, result);
+			return result;
+		}
+
 		let tResult = false,
-			tGraphList:any[],
-			tListResponse:any = await codapInterface.sendRequest({
+			tGraphList:any[];
+		return codapInterface.sendRequest({
 			action: 'get',
 			resource:'componentList'
-		});
-		tGraphList = tListResponse.values.filter((iResponse: { type:string })=>{
-			return iResponse.type === 'graph';
-		});
-		if( tGraphList.length > 1) {
-			// We need to gather up an array of {lower,upper} bounds and then check to see if any two
-			// are close enough to "pass" muster.
-			tResult = true;
-		}
-		return tResult;
+		}).then( (iListResponse:any):Promise<boolean>=>{
+				tGraphList = iListResponse.values.filter((iResponse: { type:string })=>{
+					return iResponse.type === 'graph';
+				});
+				if( tGraphList.length > 1) {
+					let tGraphsRequests = tGraphList.map(iGraph => {
+						return {
+							action: 'get',
+							resource: `component[${iGraph.id}]`
+						}
+					});
+					return codapInterface.sendRequest(tGraphsRequests).then((iGraphsResults: any) => {
+						let tBoundsList = iGraphsResults.map((iGraph: any) => {
+							return getBounds(iGraph);
+						});
+						while (tBoundsList.length > 1 && !tResult) {
+							let tOneBounds = tBoundsList.pop();
+							tResult = tBoundsList.some((iBounds: any) => {
+								return within10Percent(tOneBounds, iBounds);
+							})
+						}
+						return Promise.resolve(tResult);
+					});
+				}
+				return Promise.resolve(false);
+			});
 	}
 
 	private async checkForTaskCompletion( iNotification: any) {
@@ -89,7 +131,7 @@ class GettingStartedTutorial extends Component<{},
 		});
 
 		let tests = [
-			makeKeyedTest((iCandidate:{key:string})=>this_.isAccomplished(iCandidate.key), 'isAccomplished'),
+			makeKeyedTest((iCandidate:{key:string})=>!this_.isAccomplished(iCandidate.key), 'isAccomplished'),
 			makeKeyedTest((iCandidate: { componentTypeArray: string[] }) => {
 				return !iCandidate.componentTypeArray ||
 					iCandidate.componentTypeArray.includes(tValues.type)
@@ -101,7 +143,7 @@ class GettingStartedTutorial extends Component<{},
 			makeKeyedTest((iCandidate:{prereq:string})=>!iCandidate.prereq ||
 				this_.isAccomplished(iCandidate.prereq), 'prereq'),
 			makeKeyedTest(async (iCandidate:{renameType:string})=>!iCandidate.renameType ||
-				await this_.resourceIsOfType(iNotification.resource, iCandidate.renameType), 'renameType'),
+				this_.resourceIsOfType(iNotification.resource, iCandidate.renameType), 'renameType'),
 			makeKeyedTest((iCandidate:{collectionName:string, operation:string})=>
 				!(iCandidate.collectionName && iCandidate.operation === 'selectCases') ||
 				(tValues.result.cases && tValues.result.cases.length > 0 &&
@@ -110,32 +152,40 @@ class GettingStartedTutorial extends Component<{},
 				'noneSelected'),
 			makeKeyedTest((iCandidate:{moreThanOneSelected:boolean})=>!iCandidate.moreThanOneSelected ||
 				(tValues.result.cases && tValues.result.cases.length > 1), 'moreThanOneSelected'),
-			makeKeyedTest(async (iCandidate:{testMethodName:string})=>!iCandidate.testMethodName ||
-				await this_[iCandidate.testMethodName](), 'testMethodName'),
+			makeKeyedTest((iCandidate:{somethingHidden:boolean})=>!iCandidate.somethingHidden ||
+				(tValues.numberHidden > 0), 'somethingHidden'),
+			makeKeyedTest(async (iCandidate:{testMethodName:string})=> {
+				return !iCandidate.testMethodName ? Promise.resolve(true) : this_[iCandidate.testMethodName]();
+			}, 'testMethodName'),
 			makeKeyedTest((iCandidate:{collectionName:string, operation:string})=>
 				!(iCandidate.collectionName && iCandidate.operation === 'createCollection') ||
 				(tValues.result.name === iCandidate.collectionName), 'collectionName+createCollection')
 		];
 		function defer(candidate:any, keyedTest:{test:any, key:string}) {
-			return(
-				new Promise((resolve, reject) => {
-					let testResult = keyedTest.test(candidate);
-					const msg = `candidateKey: ${candidate.key}, testKey: ${keyedTest.key}`;
-					if (!testResult)
-						resolve(`success ${msg}`)
-					else
-						reject(`reject ${msg}`)
-				}))
-		}
+			return function() {
+						let testResult = keyedTest.test(candidate);
+						const msg = `candidateKey: ${candidate.key}, testKey: ${keyedTest.key}`;
+						console.log('testResult = ', testResult, msg);
+						return testResult;
+/*
+						if (testResult)
+							return Promise.resolve(`success ${msg}`)
+						else
+							return Promise.reject(`reject ${msg}`)
+*/
+					}
+			}
 
 		tCandidates.forEach(iCandidate=>{
 			let runnableTests = tests.map(iTest=>{
-				const tDeferred = defer(iCandidate, iTest);
-				return tDeferred;
-			})
+				return defer(iCandidate, iTest);
+			});
+			let promises = runnableTests.map(iFunc=> {
+				return iFunc();
+			});
 
-			Promise.all(runnableTests).then(results => {
-				if( results.length === tests.length) {
+			Promise.all(promises).then(results => {
+				if( results.every(iResult=>Boolean(iResult))) {
 					this_.handleAccomplishment(iCandidate.key);
 					this_.acceptProvisionals();
 				}
@@ -146,55 +196,21 @@ class GettingStartedTutorial extends Component<{},
 					})
 				}
 			});
-
-/*
-			if( !this_.isAccomplished(iCandidate.key) &&
-				(!iCandidate.componentTypeArray || iCandidate.componentTypeArray.includes(tValues.type)) &&
-				(!iCandidate.attributeNameArray || iCandidate.attributeNameArray.includes(tValues.attributeName)) &&
-				(!iCandidate.axisOrientation || iCandidate.axisOrientation === tValues.axisOrientation) &&
-				(!iCandidate.prereq || this_.isAccomplished(iCandidate.prereq)) &&
-				(!iCandidate.renameType || await this_.resourceIsOfType(iNotification.resource, iCandidate.renameType)) &&
-				(!(iCandidate.collectionName && iCandidate.operation === 'selectCases') || (tValues.result.cases && tValues.result.cases.length > 0 &&
-					tValues.result.cases[0].collection.name === iCandidate.collectionName)) &&
-				(!iCandidate.noneSelected || !tValues.result.cases) &&
-				(!iCandidate.moreThanOneSelected || (tValues.result.cases && tValues.result.cases.length > 1)) &&
-				(!iCandidate.testMethodName || await this_[iCandidate.testMethodName]()) &&
-				(!(iCandidate.collectionName && iCandidate.operation === 'createCollection') ||
-					(tValues.result.name === iCandidate.collectionName))
-			) {
-				console.log('accomplished ', iCandidate.key);
-				this_.handleAccomplishment( iCandidate.key);
-				// this_.acceptProvisionals();
-				tHandledOne = true;
-			}
-*/
 		});
-/*
-		console.log('finished loop. tHandledOne = ', tHandledOne);
-		if( !tHandledOne && this.allAccomplished()) {
-			this.setState({
-				whichFeedback: 'feedback',
-				feedbackText: allAccomplishedFeedback
-			})
-		}
-		if( tHandledOne)
-			this_.acceptProvisionals();
-*/
-
 	}
 
-	private async resourceIsOfType(iResource:string, iType:string):Promise<boolean> {
-		let tResult = false,
-			tMatch = iResource.match(/\d+/),
+	private resourceIsOfType(iResource:string, iType:string):Promise<boolean> {
+		let tMatch = iResource.match(/\d+/),
 			tID = tMatch && Number(tMatch[0]);
 		if( tID) {
-			let tGetResult:any = await codapInterface.sendRequest( {
+			return codapInterface.sendRequest( {
 				action: 'get',
 				resource: `component[${tID}]`
+			}).then((iResult:any)=>{
+				return Promise.resolve(iResult.success && iResult.values.type === iType);
 			});
-			tResult = tGetResult.success && tGetResult.values.type === iType;
 		}
-		return tResult;
+		return Promise.resolve(true);
 	}
 
 	allAccomplished() {

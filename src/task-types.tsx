@@ -17,6 +17,7 @@ export interface TaskDescription {
 	collectionName?:string,	// For selecting from a specific collection
 	noneSelected?:boolean,
 	moreThanOneSelected?:boolean,
+	somethingHidden?:boolean,
 	prereq?: string,
 	testMethodName?:string
 }
