@@ -22,7 +22,7 @@ import {initializePlugin} from './lib/codap-helper';
 import './getting-started-tutorial.css';
 import {WelcomeArea} from "./welcome-area";
 import {TaskList} from "./task-list";
-import {allAccomplishedFeedback, parameters, taskDescriptions} from "./wx-constants";
+import {allAccomplishedFeedback, parameters, taskDescriptions} from "./vs-constants";
 import codapInterface from "./lib/CodapInterface";
 
 class GettingStartedTutorial extends Component<{},
@@ -124,6 +124,14 @@ class GettingStartedTutorial extends Component<{},
 			return {test: iTest, key: key };
 		}
 
+		if (this.allAccomplished()) {
+			this.setState({
+				whichFeedback: 'feedback',
+				feedbackText: allAccomplishedFeedback
+			})
+			return;
+		}
+
 		let this_ = this,
 			tValues = iNotification.values,
 			tCandidates = taskDescriptions.descriptions.filter(iDesc=>{
@@ -188,12 +196,6 @@ class GettingStartedTutorial extends Component<{},
 				if( results.every(iResult=>Boolean(iResult))) {
 					this_.handleAccomplishment(iCandidate.key);
 					this_.acceptProvisionals();
-				}
-				else if (this_.allAccomplished()) {
-					this.setState({
-						whichFeedback: 'feedback',
-						feedbackText: allAccomplishedFeedback
-					})
 				}
 			});
 		});

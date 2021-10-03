@@ -1,5 +1,5 @@
 import React from "react";
-import {parameters} from "./wx-constants";
+import {parameters} from "./vs-constants";
 
 export interface WelcomeProps {
 	movieURL: string,
@@ -13,7 +13,7 @@ export function WelcomeArea(props:WelcomeProps) {
 	switch (props.whichFeedback) {
 		case 'welcome':
 			tResult = (
-				<div className="GettingStartedTutorial-header-welcome">
+				<div className="GettingStartedTutorial-header welcome">
 					<h2>{parameters.title}</h2>
 					{parameters.welcomeText}
 				</div>
@@ -21,7 +21,7 @@ export function WelcomeArea(props:WelcomeProps) {
 			break;
 		case 'movie':
 			tResult = (
-				<div className="GettingStartedTutorial-header-movie">
+				<div className="GettingStartedTutorial-header movie">
 					<video id="movieVideo" className="GettingStartedTutorial-movie" autoPlay onEnded={props.handleEnded}>
 						<source src={props.movieURL} type="video/mp4"/>
 					</video>
@@ -30,14 +30,14 @@ export function WelcomeArea(props:WelcomeProps) {
 			break;
 		case 'feedback':
 			tResult = (
-				<div className="GettingStartedTutorial-header-feedback">
+				<div className="GettingStartedTutorial-header feedback">
 					{props.feedbackText}
 				</div>
 			);
 			break;
 		default:
 			tResult = (
-				<div className="GettingStartedTutorial-header-empty"/>
+				<div className="GettingStartedTutorial-header empty"/>
 			);
 	}
 	return tResult;
