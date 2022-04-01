@@ -1,9 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
-import GettingStartedTutorial from './getting-started-tutorial';
+import DayLengthPlugin from './day-length-plugin';
 
 it('renders without crashing', () => {
   const div = document.createElement('div');
-  ReactDOM.render(<GettingStartedTutorial />, div);
+  ReactDOM.render(<DayLengthPlugin />, div);
   ReactDOM.unmountComponentAtNode(div);
 });
