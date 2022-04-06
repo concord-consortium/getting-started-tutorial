@@ -22,7 +22,7 @@ const kMinQueryInterval = 800;
 const kDefaultMaxRows = 5;
 const kMinNameLength = 3;
 
-const kPlaceholderText = 'city, state';
+const kPlaceholderText = 'city, state or country';
 
 const kClassGeoNameInput = 'geo-name-select';
 const kClassSelectList = 'geoname-selection-list';

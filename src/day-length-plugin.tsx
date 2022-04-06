@@ -84,8 +84,10 @@ class DayLengthPlugin extends Component<{},
 		this.setState({lat: location.latitude, long: location.longitude, loc: location.name})
 	}
 
-	async datasetExists(iDatasetName: string): Promise<boolean> {
-		const tContextListResult: any = await codapInterface.sendRequest({
+	async getData() {
+
+		async function datasetExists(iDatasetName: string): Promise<boolean> {
+			const tContextListResult: any = await codapInterface.sendRequest({
 			"action": "get",
 			"resource": "dataContextList"
 		}).catch((reason) => {
@@ -94,44 +96,44 @@ class DayLengthPlugin extends Component<{},
 		return tContextListResult.values.some((aContext: any) => aContext.name === iDatasetName)
 	}
 
-	async guaranteeDataset(iDatasetParams: any) {
-		if (!await this.datasetExists(iDatasetParams.contextName)) {
-			await codapInterface.sendRequest({
-				action: 'create',
-				resource: 'dataContext',
-				values: {
-					name: iDatasetParams.contextName,
-					title: iDatasetParams.contextName,
-					collections: [{
-						name: iDatasetParams.parentCollectionName,
-						title: iDatasetParams.parentCollectionName,
-						attrs: [
-							{name: 'location'},
-							{name: 'latitude', type: 'categorical', precision: 5},
-							{name: 'longitude', type: 'categorical', precision: 5}
-						]
-					},
-						{
-							name: iDatasetParams.childCollectionName,
-							title: iDatasetParams.childCollectionName,
-							parent: iDatasetParams.parentCollectionName,
+		async function guaranteeDataset(iDatasetParams: any) {
+			if (!await datasetExists(iDatasetParams.contextName)) {
+				await codapInterface.sendRequest({
+					action: 'create',
+					resource: 'dataContext',
+					values: {
+						name: iDatasetParams.contextName,
+						title: iDatasetParams.contextName,
+						collections: [{
+							name: iDatasetParams.parentCollectionName,
+							title: iDatasetParams.parentCollectionName,
 							attrs: [
-								{name: 'day', type: 'date', precision: 'day'},
-								{name: 'day length', type: 'numeric', unit: 'hours', precision: 3},
-								{name: 'sunrise', type: 'date', precision: 'minute'},
-								{name: 'sunset', type: 'date', precision: 'minute'},
-								{name: 'rise hour'},
-								{name: 'set hour'},
-								{name: 'state'}
+								{name: 'location'},
+								{name: 'latitude', type: 'categorical', precision: 5},
+								{name: 'longitude', type: 'categorical', precision: 5}
 							]
-						}]
-				}
-			})
+						},
+							{
+								name: iDatasetParams.childCollectionName,
+								title: iDatasetParams.childCollectionName,
+								parent: iDatasetParams.parentCollectionName,
+								attrs: [
+									{name: 'day', type: 'date', precision: 'day'},
+									{name: 'day length', type: 'numeric', unit: 'hours', precision: 3},
+									{name: 'sunrise', type: 'date', precision: 'minute'},
+									{name: 'sunset', type: 'date', precision: 'minute'},
+									{name: 'rise hour'},
+									{name: 'set hour'},
+									// {name: 'state'}
+								]
+							}]
+					}
+				})
+			}
 		}
-	}
 
-	async getComponentByTypeAndTitleOrName(iType: string, iTitle: string, iName?: string): Promise<number> {
-		const tListResult: any = await codapInterface.sendRequest(
+		async function getComponentByTypeAndTitleOrName(iType: string, iTitle: string, iName?: string): Promise<number> {
+			const tListResult: any = await codapInterface.sendRequest(
 			{
 				action: 'get',
 				resource: `componentList`
@@ -151,69 +153,67 @@ class DayLengthPlugin extends Component<{},
 		return tID;
 	}
 
-	/**
-	 * Find the case table or case card corresponding to the given dataset
-	 * @param iDatasetInfo
-	 */
-	async guaranteeTableOrCardIsVisibleFor(iName: string) {
-		if (iName !== '') {
-			const tTableID = await this.getComponentByTypeAndTitleOrName('caseTable', iName),
-				tFoundTable = tTableID >= 0
-			if (!tFoundTable) {
-				const tResult: any = await codapInterface.sendRequest({
-					action: 'create',
-					resource: `component`,
-					values: {
-						type: 'caseTable',
-						name: iName,
-						title: iName,
-						dataContext: iName
-					}
-				}).catch((reason) => {
-					console.log(JSON.stringify(reason))
-				})
-			}
-		}
-	}
-
-	async removeFormulas(iDatasetParams: any) {
-		const tMsgs = ['day length', 'rise hour', 'set hour', 'state'].map(name=>{
-			return {
-				"action": "update",
-				"resource": `dataContext[${iDatasetParams.contextName}].collection[${iDatasetParams.childCollectionName}].attribute[${name}]`,
-				values: {
-					formula: ''
+		/**
+		 * Find the case table or case card corresponding to the given dataset
+		 * @param iDatasetInfo
+		 */
+		async function guaranteeTableOrCardIsVisibleFor(iName: string) {
+			if (iName !== '') {
+				const tTableID = await getComponentByTypeAndTitleOrName('caseTable', iName),
+					tFoundTable = tTableID >= 0
+				if (!tFoundTable) {
+					const tResult: any = await codapInterface.sendRequest({
+						action: 'create',
+						resource: `component`,
+						values: {
+							type: 'caseTable',
+							name: iName,
+							title: iName,
+							dataContext: iName
+						}
+					}).catch((reason) => {
+						console.log(JSON.stringify(reason))
+					})
 				}
 			}
-		})
-		await codapInterface.sendRequest(tMsgs)
-	}
+		}
 
-	async addFormulas(iDatasetParams: any) {
-		const tMsgs = [
-			{name: 'day length', formula: `state = 'light' ? 24 :
-state = 'dark' ? 0 :
-(sunset-sunrise)/3600 > 0 ? (sunset-sunrise)/3600 : (sunset-sunrise)/3600 + 24`},
-			{name: 'rise hour', formula: 'hours(sunrise)+minutes(sunrise)/60'},
-			{name: 'set hour', formula: 'hours(sunset)+minutes(sunset)/60'},
-			{name: 'state', formula: `isMissing(sunrise) ?
+		async function removeFormulas(iDatasetParams: any) {
+			const tMsgs = ['day length', 'rise hour', 'set hour', /*'state'*/].map(name=>{
+				return {
+					"action": "update",
+					"resource": `dataContext[${iDatasetParams.contextName}].collection[${iDatasetParams.childCollectionName}].attribute[${name}]`,
+					values: {
+						formula: ''
+					}
+				}
+			})
+			await codapInterface.sendRequest(tMsgs)
+		}
+
+		async function addFormulas(iDatasetParams: any) {
+			const tMsgs = [
+				{name: 'day length', formula: `(sunset-sunrise)/3600 > 0 ? (sunset-sunrise)/3600 : (sunset-sunrise)/3600 + 24`},
+				{name: 'rise hour', formula: 'hours(sunrise)+minutes(sunrise)/60'},
+				{name: 'set hour', formula: 'hours(sunset)+minutes(sunset)/60'},
+				{name: 'state', formula: ''},
+/*				{name: 'state', formula: `isMissing(sunrise) ?
 caseIndex=1 ? (latitude>0 ? 'dark' : 'light') :
 isMissing(prev(sunrise)) ? prev(state) :
 prev(\`rise hour\`) < 6 ? 'light' :
 prev(\`rise hour\`) > 6 ? 'dark' :
-prev(state) : 'normal'`}].map(item=>{
-			return {
-				"action": "update",
-				"resource": `dataContext[${iDatasetParams.contextName}].collection[${iDatasetParams.childCollectionName}].attribute[${item.name}]`,
-				values: {
-					formula: item.formula
+prev(state) : 'normal'`}*/].map(item=>{
+				return {
+					"action": "update",
+					"resource": `dataContext[${iDatasetParams.contextName}].collection[${iDatasetParams.childCollectionName}].attribute[${item.name}]`,
+					values: {
+						formula: item.formula
+					}
 				}
-			}
-		})
-		await codapInterface.sendRequest(tMsgs)
-	}
+			})
+			await codapInterface.sendRequest(tMsgs)
+		}
 
-	async getData() {
 		const this_ = this,
 			createRequests: {}[] = [],
 			year = 2022
@@ -243,9 +243,9 @@ prev(state) : 'normal'`}].map(item=>{
 		}
 
 		if (this.state.lat !== 999 && this.state.long !== 999) {
-			await this.guaranteeDataset(datasetParameters)
-			await this.guaranteeTableOrCardIsVisibleFor(datasetParameters.contextName)
-			await this.removeFormulas(datasetParameters)
+			await guaranteeDataset(datasetParameters)
+			await guaranteeTableOrCardIsVisibleFor(datasetParameters.contextName)
+			await addFormulas(datasetParameters)
 			const parentCaseResult: any = await codapInterface.sendRequest({
 				action: 'create',
 				resource: `dataContext[${datasetParameters.contextName}].collection[${datasetParameters.parentCollectionName}].case`,
@@ -264,7 +264,7 @@ prev(state) : 'normal'`}].map(item=>{
 				resource: `dataContext[${datasetParameters.contextName}].collection[${datasetParameters.childCollectionName}].case`,
 				values: createRequests
 			})
-			await this.addFormulas(datasetParameters)
+			// await addFormulas(datasetParameters)
 		}
 	}
 
