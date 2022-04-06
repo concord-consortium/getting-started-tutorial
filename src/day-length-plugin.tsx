@@ -17,11 +17,12 @@
 //  limitations under the License.
 // ==========================================================================
 
-import React, {Component, ErrorInfo} from 'react';
+import React, {useRef, Component, ErrorInfo} from 'react';
 import {initializePlugin} from './lib/codap-helper';
 import './day-length-plugin.css';
 import {getSunrise, getSunset} from 'sunrise-sunset-js';
 import codapInterface from "./lib/CodapInterface";
+import {GeonameSearch} from "./geonameSearch";
 
 const parameters = {
 	name: 'Day Length',
@@ -40,13 +41,17 @@ const datasetParameters = {
 
 class DayLengthPlugin extends Component<{},
 	{
-		loc:string,
-		lat: number,
-		long: number,
+		loc: string,
+		lat: number | string,
+		long: number | string,
 		hasError: boolean,
 		calledInitPlugin: boolean
 	}> {
 	[key: string]: any
+
+	ref: any
+
+	// ref: React.RefObject<Element> | null = null
 
 	constructor(props: any) {
 		super(props);
@@ -57,20 +62,26 @@ class DayLengthPlugin extends Component<{},
 			hasError: false,
 			calledInitPlugin: false
 		}
+		this.ref = React.createRef();
 		this.getData = this.getData.bind(this)
+		this.handleLocation = this.handleLocation.bind(this)
 	}
 
 	async componentDidMount() {
-		if( !this.state.calledInitPlugin) {
-			console.log('about to call initializePlugin')
-			await initializePlugin(parameters.name, parameters.version, parameters.initialDimensions);
-			this.setState({calledInitPlugin: true})
-		}
+		await initializePlugin(parameters.name, parameters.version, parameters.initialDimensions);
+		this.setState({calledInitPlugin: true})
+		// @ts-ignore
+		if (this.ref)
+			new GeonameSearch(this.ref.current, 'codap', this.handleLocation)
 	}
 
-	componentDidCatch(error:Error, errorInfo:ErrorInfo) {
+	componentDidCatch(error: Error, errorInfo: ErrorInfo) {
 		// You can also log the error to an error reporting service
 		console.log(error, errorInfo);
+	}
+
+	handleLocation(location: { latitude: number, longitude: number, name: string }) {
+		this.setState({lat: location.latitude, long: location.longitude, loc: location.name})
 	}
 
 	async datasetExists(iDatasetName: string): Promise<boolean> {
@@ -96,8 +107,8 @@ class DayLengthPlugin extends Component<{},
 						title: iDatasetParams.parentCollectionName,
 						attrs: [
 							{name: 'location'},
-							{name: 'latitude', type: 'numeric', precision: 5},
-							{name: 'longitude', type: 'numeric', precision: 5}
+							{name: 'latitude', type: 'categorical', precision: 5},
+							{name: 'longitude', type: 'categorical', precision: 5}
 						]
 					},
 						{
@@ -106,12 +117,12 @@ class DayLengthPlugin extends Component<{},
 							parent: iDatasetParams.parentCollectionName,
 							attrs: [
 								{name: 'day', type: 'date', precision: 'day'},
-								{name: 'day length', type: 'numeric', unit: 'hours', precision: 3,
-										formula: '(sunset-sunrise)/3600 + 24'},
+								{name: 'day length', type: 'numeric', unit: 'hours', precision: 3},
 								{name: 'sunrise', type: 'date', precision: 'minute'},
 								{name: 'sunset', type: 'date', precision: 'minute'},
-								{name: 'rise hour', formula: 'hours(sunrise)+minutes(sunrise)/60'},
-								{name: 'set hour', formula: 'hours(sunset)+minutes(sunset)/60'}
+								{name: 'rise hour'},
+								{name: 'set hour'},
+								{name: 'state'}
 							]
 						}]
 				}
@@ -129,7 +140,6 @@ class DayLengthPlugin extends Component<{},
 			.catch(() => {
 				console.log('Error getting component list')
 			});
-		console.log(`tListResult = ${JSON.stringify(tListResult)}`)
 		let tID = -1;
 		if (tListResult.success) {
 			let tFoundValue = tListResult.values.find((iValue: any) => {
@@ -149,9 +159,8 @@ class DayLengthPlugin extends Component<{},
 		if (iName !== '') {
 			const tTableID = await this.getComponentByTypeAndTitleOrName('caseTable', iName),
 				tFoundTable = tTableID >= 0
-			console.log(`tTableID = ${tTableID}`)
-			if( !tFoundTable) {
-				const tResult:any = await codapInterface.sendRequest({
+			if (!tFoundTable) {
+				const tResult: any = await codapInterface.sendRequest({
 					action: 'create',
 					resource: `component`,
 					values: {
@@ -160,13 +169,48 @@ class DayLengthPlugin extends Component<{},
 						title: iName,
 						dataContext: iName
 					}
-				}).catch((reason)=>{
+				}).catch((reason) => {
 					console.log(JSON.stringify(reason))
 				})
-				console.log(`tResult = ${JSON.stringify(tResult)}`)
 			}
 		}
-		console.log('leaving guaranteeTableOrCardIsVisibleFor')
+	}
+
+	async removeFormulas(iDatasetParams: any) {
+		const tMsgs = ['day length', 'rise hour', 'set hour', 'state'].map(name=>{
+			return {
+				"action": "update",
+				"resource": `dataContext[${iDatasetParams.contextName}].collection[${iDatasetParams.childCollectionName}].attribute[${name}]`,
+				values: {
+					formula: ''
+				}
+			}
+		})
+		await codapInterface.sendRequest(tMsgs)
+	}
+
+	async addFormulas(iDatasetParams: any) {
+		const tMsgs = [
+			{name: 'day length', formula: `state = 'light' ? 24 :
+state = 'dark' ? 0 :
+(sunset-sunrise)/3600 > 0 ? (sunset-sunrise)/3600 : (sunset-sunrise)/3600 + 24`},
+			{name: 'rise hour', formula: 'hours(sunrise)+minutes(sunrise)/60'},
+			{name: 'set hour', formula: 'hours(sunset)+minutes(sunset)/60'},
+			{name: 'state', formula: `isMissing(sunrise) ?
+caseIndex=1 ? (latitude>0 ? 'dark' : 'light') :
+isMissing(prev(sunrise)) ? prev(state) :
+prev(\`rise hour\`) < 6 ? 'light' :
+prev(\`rise hour\`) > 6 ? 'dark' :
+prev(state) : 'normal'`}].map(item=>{
+			return {
+				"action": "update",
+				"resource": `dataContext[${iDatasetParams.contextName}].collection[${iDatasetParams.childCollectionName}].attribute[${item.name}]`,
+				values: {
+					formula: item.formula
+				}
+			}
+		})
+		await codapInterface.sendRequest(tMsgs)
 	}
 
 	async getData() {
@@ -176,82 +220,86 @@ class DayLengthPlugin extends Component<{},
 		let parentCaseID: number = 0
 
 		function getSolarEventsForYear() {
-			console.log('in getSolarEventsForYear')
 			const start = new Date(year, 0, 1).getTime();
 			for (let i = 0; i < 366; i++) {
 				const d = new Date(start + (i * 24 * 60 * 60 * 1000));
 				if (d.getFullYear() > year) break; // For non-leap year
+				let tSunrise: Date | string = getSunrise(Number(this_.state.lat), Number(this_.state.long), d),
+					tSunset: Date | string = getSunset(Number(this_.state.lat), Number(this_.state.long), d)
+				if (String(tSunrise) === 'Invalid Date' || String(tSunset) === 'Invalid Date') {
+					tSunset = ''
+					tSunrise = ''
+				}
 				createRequests.push({
 					// @ts-ignore
 					parent: parentCaseID,
 					values: {
 						day: d,
-						sunrise: getSunrise(this_.state.lat, this_.state.long, d),
-						sunset: getSunset(this_.state.lat, this_.state.long, d),
+						sunrise: tSunrise,
+						sunset: tSunset
 					}
 				});
 			}
 		}
 
 		if (this.state.lat !== 999 && this.state.long !== 999) {
-			console.log('Starting getData')
 			await this.guaranteeDataset(datasetParameters)
 			await this.guaranteeTableOrCardIsVisibleFor(datasetParameters.contextName)
-			console.log('About to create parent case')
-			try {
-				const parentCaseResult: any = await codapInterface.sendRequest({
-					action: 'create',
-					resource: `dataContext[${datasetParameters.contextName}].collection[${datasetParameters.parentCollectionName}].case`,
+			await this.removeFormulas(datasetParameters)
+			const parentCaseResult: any = await codapInterface.sendRequest({
+				action: 'create',
+				resource: `dataContext[${datasetParameters.contextName}].collection[${datasetParameters.parentCollectionName}].case`,
+				values: {
 					values: {
-						values: {
-							location: this.state.loc,
-							latitude: this.state.lat,
-							longitude: this.state.long
-						}
+						location: this.state.loc,
+						latitude: this.state.lat,
+						longitude: this.state.long
 					}
-				})
-				console.log(`parentCaseResult = ${parentCaseResult}`)
-				// if (parentCaseResult.success) {
-				parentCaseID = parentCaseResult.values[0].id
-				getSolarEventsForYear()
-				await codapInterface.sendRequest({
-					action: 'create',
-					resource: `dataContext[${datasetParameters.contextName}].collection[${datasetParameters.childCollectionName}].case`,
-					values: createRequests
-				})
-				// }
-			} catch (error) {
-				console.log(error)
-			}
+				}
+			})
+			parentCaseID = parentCaseResult.values[0].id
+			getSolarEventsForYear()
+			await codapInterface.sendRequest({
+				action: 'create',
+				resource: `dataContext[${datasetParameters.contextName}].collection[${datasetParameters.childCollectionName}].case`,
+				values: createRequests
+			})
+			await this.addFormulas(datasetParameters)
 		}
 	}
 
 	public render() {
-		if( this.state.hasError) {
+		if (this.state.hasError) {
 			return <h1>Something went wrong!</h1>
 		}
 		return (
 			<div className="DayLengthPlugin">
 				<p>How Long Is a Day?</p>
 				<div className='input'>
-						<label>
-							Location:
-							<input type='text' value={this.state.loc}
-										 onChange={(e) => this.setState({loc: e.target.value})}/>
-						</label>
-						<label>
-							Latitude:
-							<input type='text' value={this.state.lat}
-										 onChange={(e) => this.setState({lat: Number(e.target.value)})}/>
-						</label>
-						<label>
-							Longitude:
-							<input type='text' value={this.state.long}
-										 onChange={(e) => this.setState({long: Number(e.target.value)})}/>
-						</label>
-						<button onClick={this.getData}>
-							Get Data
-						</button>
+					<label>
+						Location: <div id="geonameContainer" ref={this.ref}></div>
+						{/*
+						<input type='text' id='geonameContainer' value={this.state.loc}
+									 onChange={(e) => this.setState({loc: e.target.value})}/>
+*/}
+					</label>
+					<label>
+						Latitude:
+						<input type='text' value={this.state.lat}
+									 onChange={(e) => this.setState({lat: e.target.value})}
+									 onBlur={(e) => this.setState({lat: Number(e.target.value)})}
+						/>
+					</label>
+					<label>
+						Longitude:
+						<input type='text' value={this.state.long}
+									 onChange={(e) => this.setState({long: Number(e.target.value)})}
+									 onBlur={(e) => this.setState({long: Number(e.target.value)})}
+						/>
+					</label>
+					<button onClick={this.getData}>
+						Get Data
+					</button>
 				</div>
 			</div>
 		);
