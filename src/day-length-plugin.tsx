@@ -26,7 +26,7 @@ import {GeonameSearch} from "./geonameSearch";
 
 const parameters = {
 	name: 'Day Length',
-	version: '0.3',
+	version: '0.1',
 	initialDimensions: {
 		width: 250,
 		height: 250
@@ -45,6 +45,7 @@ class DayLengthPlugin extends Component<{},
 		lat: number | string,
 		long: number | string,
 		hasError: boolean,
+		calledInitPlugin: boolean
 	}> {
 	[key: string]: any
 
@@ -58,7 +59,8 @@ class DayLengthPlugin extends Component<{},
 			loc: 'Orinda, CA',
 			lat: 37.84413,
 			long: -122.14453,
-			hasError: false
+			hasError: false,
+			calledInitPlugin: false
 		}
 		this.ref = React.createRef();
 		this.getData = this.getData.bind(this)
@@ -67,6 +69,7 @@ class DayLengthPlugin extends Component<{},
 
 	async componentDidMount() {
 		await initializePlugin(parameters.name, parameters.version, parameters.initialDimensions);
+		this.setState({calledInitPlugin: true})
 		// @ts-ignore
 		if (this.ref)
 			new GeonameSearch(this.ref.current, 'codap', this.handleLocation)
@@ -213,7 +216,7 @@ prev(state) : 'normal'`}*/].map(item=>{
 
 		const this_ = this,
 			createRequests: {}[] = [],
-			year = new Date().getFullYear()
+			year = 2022
 		let parentCaseID: number = 0
 
 		function getSolarEventsForYear() {
@@ -275,6 +278,10 @@ prev(state) : 'normal'`}*/].map(item=>{
 				<div className='input'>
 					<label>
 						Location: <div id="geonameContainer" ref={this.ref}></div>
+						{/*
+						<input type='text' id='geonameContainer' value={this.state.loc}
+									 onChange={(e) => this.setState({loc: e.target.value})}/>
+*/}
 					</label>
 					<label>
 						Latitude:

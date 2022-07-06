@@ -173,7 +173,6 @@ class GeonameSearch {
             _this.selectionListEl.classList.add(kClassHidden);
           }
         }
-        _this.inputEl.blur()
       } else if (ev.key === 'ArrowDown') {
         if (!selectorHidden) {
           let currentCandidateEl = _this.selectionListEl.querySelector('.' + kClassCandidate );
@@ -253,7 +252,6 @@ class GeonameSearch {
     el.setAttribute('type', 'text');
     el.setAttribute('placeholder', kPlaceholderText);
     el.addEventListener('keydown', handleKeyDown);
-    el.addEventListener('focus', ()=>{_this.inputEl.select()});
     this.inputEl = el;
     attachmentEl.append(el);
     el = document.createElement('div');
