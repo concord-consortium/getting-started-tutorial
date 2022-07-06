@@ -1,0 +1,4 @@
+npm run build
+rm -rf vs_tutorial
+mv build vs_tutorial
+rsync -av vs_tutorial codap-server.concord.org:public_html
