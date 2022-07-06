@@ -1,12 +1,14 @@
 import codapInterface from "./CodapInterface";
 
-export async function initializePlugin(pluginName: string, version: string, dimensions: {width: number, height: number}) {
+export function initializePlugin(pluginName: string, version: string, dimensions: {width: number, height: number}) {
+  console.log('In initializePlugin')
   const interfaceConfig = {
     name: pluginName,
     version: version,
     dimensions: dimensions
   };
-  await codapInterface.init(interfaceConfig);
+  const tResult = codapInterface.init(interfaceConfig);
+  console.log('Finishing initializePlugin with ', tResult)
 }
 
 const dataSetString = (contextName: string) => `dataContext[${contextName}]`;

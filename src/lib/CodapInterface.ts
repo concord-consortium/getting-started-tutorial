@@ -297,6 +297,7 @@ const codapInterface = {
    * @return {Promise} The promise of the response from CODAP.
    */
   sendRequest: function (message: any, callback?: any) {
+    console.log(message)
     return new Promise(function (resolve, reject){
       function handleResponse (request: any, response: {success: boolean} | undefined, callback: (arg0: any, arg1: any) => void) {
         if (response === undefined) {
